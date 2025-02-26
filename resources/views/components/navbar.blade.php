@@ -35,6 +35,11 @@
                     </button>
                 </div>
             </div>
+            <div>
+                <a href="{{ route('cart.view') }}" class="bg-white text-blue-600 px-4 py-2 rounded-lg hover:bg-gray-200 transition">
+                    🛒 Keranjang ({{ session('cart') ? count(session('cart')) : 0 }})
+                </a>
+            </div>
         </div>
     </div>
 
