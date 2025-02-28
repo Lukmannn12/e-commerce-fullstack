@@ -67,31 +67,44 @@
                   <p class="mt-4 text-gray-600">{{ $product->description }}</p>
 
                   <!-- Pilihan Ukuran -->
-                  <div x-data="{ selectedSize: '' }">
+                  <div x-data="{ selectedStockId: '', maxQuantity: 0, quantity: 1 }">
                     <fieldset class="mt-10" aria-label="Choose a size">
                       <div class="text-sm font-medium text-gray-900">Size</div>
-                      <div class="text-sm text-gray-500">Stock: {{ $product->stocks->sum('quantity') }}</div>
+
+                      <!-- Stok akan berubah sesuai dengan size yang dipilih -->
+                      <div class="text-sm text-gray-500">
+                        Stock: <span x-text="maxQuantity">0</span>
+                      </div>
 
                       <div class="mt-4 grid grid-cols-4 gap-4">
                         @foreach ($product->stocks as $stock)
-                        <label
-                          class="group relative flex cursor-pointer items-center justify-center rounded-md border px-4 py-3 text-sm font-medium uppercase shadow-xs"
-                          :class="{ 'bg-blue-500 text-white': selectedSize === '{{ $stock->size }}' }"
-                          @click="selectedSize = '{{ $stock->size }}'">
-                          <input type="radio" name="size-choice" value="{{ $stock->size }}" class="sr-only">
+                        <label class="group relative flex cursor-pointer items-center justify-center rounded-md border px-4 py-3 text-sm font-medium uppercase shadow-xs"
+                          :class="{ 'bg-blue-500 text-white': selectedStockId === '{{ $stock->id }}' }"
+                          @click="selectedStockId = '{{ $stock->id }}'; maxQuantity = {{ $stock->quantity }}; quantity = 1">
+                          <input type="radio" name="stock_id" value="{{ $stock->id }}" class="sr-only">
                           <span>{{ $stock->size }}</span>
                         </label>
                         @endforeach
                       </div>
                     </fieldset>
+
+                    @if(auth()->check())
                     <form action="{{ route('cart.add', $product->id) }}" method="POST" class="mt-4">
-    @csrf
-    <input type="hidden" name="size" x-model="selectedSize"> <!-- Pastikan ini -->
-    <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition"
-        :disabled="!selectedSize">
-        Tambahkan ke Keranjang
-    </button>
-</form>
+                      @csrf
+                      <input type="hidden" name="stock_id" x-model="selectedStockId">
+
+                      <!-- Input jumlah sesuai dengan stok -->
+
+                      <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition mt-3"
+                        :disabled="!selectedStockId">
+                        Tambahkan ke Keranjang
+                      </button>
+                    </form>
+                    @else
+                    <button onclick="alert('Anda harus login terlebih dahulu!')" class="bg-gray-400 text-white px-4 py-2 rounded-lg cursor-not-allowed mt-3">
+                      Tambah ke Keranjang
+                    </button>
+                    @endif
                   </div>
 
                 </div>

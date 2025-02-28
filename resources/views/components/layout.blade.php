@@ -17,7 +17,17 @@
     </head>
     <body>
         @include('components.navbar')
+        @if(session('error'))
+            <div class="bg-red-500 text-white p-3 rounded-md mb-4">
+                {{ session('error') }}
+            </div>
+        @endif
 
+        @if(session('success'))
+            <div class="bg-green-500 text-white p-3 rounded-md mb-4">
+                {{ session('success') }}
+            </div>
+        @endif
     <section id="hero section">
         @yield('content')
     </section>

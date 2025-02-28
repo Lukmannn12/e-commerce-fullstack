@@ -2,44 +2,65 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product;
+use App\Models\Cart;
+use App\Models\Stock;
+use App\Models\User;
 use Illuminate\Http\Request;
+
+use Illuminate\Support\Facades\DB;
 
 class CartController extends Controller
 {
-    public function addToCart(Request $request, $id)
+    public function addToCart(Request $request, $productId)
     {
-        $product = Product::findOrFail($id);
-        $cart = session()->get('cart', []);
+        $user = auth()->user();
     
-        // Ambil size dari request
-        $size = $request->input('size');
+        // Validasi apakah stock_id dikirim
+        $request->validate([
+            'stock_id' => 'required|exists:stocks,id',
+        ]);
     
-        if (!$size) {
-            return redirect()->back()->with('error', 'Silakan pilih ukuran sebelum menambahkan ke keranjang.');
+        // Ambil stock berdasarkan ID
+        $stock = Stock::find($request->stock_id);
+    
+        if (!$stock || $stock->product_id != $productId) {
+            return back()->with('error', 'Stok tidak valid.');
         }
     
-        // Buat key yang unik berdasarkan ID produk dan ukuran
-        $key = $id . '_' . $size;
+        // Cek apakah item sudah ada di keranjang dengan stock_id yang sama
+        $cartItem = Cart::where('user_id', $user->id)
+            ->where('product_id', $productId)
+            ->where('stock_id', $stock->id)
+            ->first();
     
-        if (isset($cart[$key])) {
-            $cart[$key]['quantity']++;
+        if ($cartItem) {
+            $cartItem->increment('quantity'); // Tambah jumlah jika sudah ada
         } else {
-            $cart[$key] = [
-                "name" => $product->name,
-                "price" => $product->price,
-                "size" => $size, // Simpan ukuran yang dipilih
-                "quantity" => 1,
-            ];
+            Cart::create([
+                'user_id' => $user->id,
+                'product_id' => $productId,
+                'stock_id' => $stock->id, // Simpan stock_id
+                'quantity' => 1,
+            ]);
         }
     
-        session()->put('cart', $cart);
-        return redirect()->back()->with('success', 'Produk berhasil ditambahkan ke keranjang!');
+        return back()->with('success', 'Produk berhasil ditambahkan ke keranjang!');
     }
+    
 
     public function viewCart()
     {
-        $cart = session()->get('cart', []);
+        $user = auth()->user();
+    
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
+        }
+    
+        $cart = Cart::where('user_id', $user->id)->with('product', 'stock')->get();
+        
         return view('cart.index', compact('cart'));
     }
+    
+    
+    
 }
