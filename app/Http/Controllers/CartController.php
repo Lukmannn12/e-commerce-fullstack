@@ -86,12 +86,13 @@ class CartController extends Controller
     
         // Ambil data keranjang berdasarkan user_id
         $cart = Cart::where('user_id', $userId)->with('product', 'stock')->get();
+        
     
         // Hitung subtotal setiap item dan total harga keseluruhan
         $cart->each(function ($item) {
             $item->subtotal = $item->quantity * ($item->product->price ?? 0);
         });
-    
+            
         $totalHarga = $cart->sum('subtotal'); // Hitung total harga
     
         return view('cart.index', compact('cart', 'totalHarga'));

@@ -34,5 +34,11 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'midtrans' => [
+        'merchant_id'    => env('MIDTRANS_MERCHANT_ID', 'G506053737'),
+        'client_key'     => env('MIDTRANS_CLIENT_KEY', 'SB-Mid-client-9gK68xaH6ZG1ijmF'),
+        'server_key'     => env('MIDTRANS_SERVER_KEY', 'SB-Mid-server-_sqpMMALNNUTiL8m-XE4rz9u'),
+        'is_production'  => env('MIDTRANS_PRODUCTION', false),
+    ],
 
 ];

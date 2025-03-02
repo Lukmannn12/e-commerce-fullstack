@@ -41,7 +41,7 @@
 
         <div class="mt-4 flex justify-between items-center">
             <a href="" class="text-blue-600 hover:underline">Lanjut Belanja</a>
-            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
+            <button type="button" id="checkout-button" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
                 Checkout Terpilih
             </button>
         </div>
@@ -52,8 +52,43 @@
     @endif
 </div>
 
+<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ config('midtrans.client_key') }}"></script>
+
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
+document.getElementById('checkout-button').addEventListener('click', function() {
+    fetch("{{ route('checkout') }}", {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                "Content-Type": "application/json"
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.snap_token) {
+                window.snap.pay(data.snap_token, {
+                    onSuccess: function(result) {
+                        alert("Pembayaran sukses!");
+                        window.location.href = "{{ route('payment.success') }}"; // Arahkan ke halaman sukses
+                    },
+                    onPending: function(result) {
+                        alert("Pembayaran Anda sedang diproses.");
+                    },
+                    onError: function(result) {
+                        alert("Pembayaran gagal.");
+                    }
+                });
+            } else {
+                alert("Gagal memproses pembayaran.");
+            }
+        })
+        .catch(error => console.error('Error:', error));
+});
+
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
         let checkboxes = document.querySelectorAll(".item-checkbox");
         let totalHargaElement = document.getElementById("totalHarga");
 
