@@ -4,17 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Cart;
 use App\Models\Stock;
-use App\Models\User;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class CartController extends Controller
 {
     public function addToCart(Request $request, $productId)
     {
-        $user = auth()->user();
-    
         // Validasi apakah stock_id dikirim
         $request->validate([
             'stock_id' => 'required|exists:stocks,id',
@@ -27,8 +24,15 @@ class CartController extends Controller
             return back()->with('error', 'Stok tidak valid.');
         }
     
+        // Ambil ID user yang sedang login
+        $userId = Auth::id();
+    
+        if (!$userId) {
+            return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
+        }
+    
         // Cek apakah item sudah ada di keranjang dengan stock_id yang sama
-        $cartItem = Cart::where('user_id', $user->id)
+        $cartItem = Cart::where('user_id', $userId)
             ->where('product_id', $productId)
             ->where('stock_id', $stock->id)
             ->first();
@@ -37,7 +41,7 @@ class CartController extends Controller
             $cartItem->increment('quantity'); // Tambah jumlah jika sudah ada
         } else {
             Cart::create([
-                'user_id' => $user->id,
+                'user_id' => $userId,
                 'product_id' => $productId,
                 'stock_id' => $stock->id, // Simpan stock_id
                 'quantity' => 1,
@@ -50,13 +54,15 @@ class CartController extends Controller
 
     public function viewCart()
     {
-        $user = auth()->user();
+        // Ambil ID user yang sedang login
+        $userId = Auth::id();
     
-        if (!$user) {
+        if (!$userId) {
             return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
         }
     
-        $cart = Cart::where('user_id', $user->id)->with('product', 'stock')->get();
+        // Ambil data keranjang berdasarkan user_id
+        $cart = Cart::where('user_id', $userId)->with('product', 'stock')->get();
         
         return view('cart.index', compact('cart'));
     }

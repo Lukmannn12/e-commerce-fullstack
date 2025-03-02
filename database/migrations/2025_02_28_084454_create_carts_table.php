@@ -13,7 +13,7 @@
         {
             Schema::create('carts', function (Blueprint $table) {
                 $table->id();
-                $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Hubungkan ke user
+                $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
                 $table->foreignId('product_id')->constrained()->onDelete('cascade'); // Produk yang ditambahkan
                 $table->foreignId('stock_id')->constrained()->onDelete('cascade'); 
                 $table->integer('quantity')->default(1); // Jumlah produk
