@@ -56,7 +56,6 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
                 </svg>
               </button>
-
               <div class="grid grid-cols-1 sm:grid-cols-12 gap-6">
                 <img src=""
                   alt="{{ $product->name }}"
@@ -88,15 +87,21 @@
                       </div>
                     </fieldset>
 
+                    <!-- Input jumlah sesuai dengan stok -->
+                    <div class="mt-4">
+                      <label class="block text-sm font-medium text-gray-900">Quantity</label>
+                      <input type="number" x-model="quantity" min="1" :max="maxQuantity" class="w-full mt-1 p-2 border rounded-md"
+                        :disabled="!selectedStockId">
+                    </div>
+
                     @if(auth()->check())
                     <form action="{{ route('cart.add', $product->id) }}" method="POST" class="mt-4">
                       @csrf
                       <input type="hidden" name="stock_id" x-model="selectedStockId">
-
-                      <!-- Input jumlah sesuai dengan stok -->
+                      <input type="hidden" name="quantity" x-model="quantity">
 
                       <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition mt-3"
-                        :disabled="!selectedStockId">
+                        :disabled="!selectedStockId || quantity < 1 || quantity > maxQuantity">
                         Tambahkan ke Keranjang
                       </button>
                     </form>
@@ -106,7 +111,6 @@
                     </button>
                     @endif
                   </div>
-
                 </div>
               </div>
             </div>

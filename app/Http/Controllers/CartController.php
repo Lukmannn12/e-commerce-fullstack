@@ -12,9 +12,10 @@ class CartController extends Controller
 {
     public function addToCart(Request $request, $productId)
     {
-        // Validasi apakah stock_id dikirim
+        // Validasi input
         $request->validate([
             'stock_id' => 'required|exists:stocks,id',
+            'quantity' => 'required|integer|min:1',
         ]);
     
         // Ambil stock berdasarkan ID
@@ -24,6 +25,11 @@ class CartController extends Controller
             return back()->with('error', 'Stok tidak valid.');
         }
     
+        // Pastikan jumlah yang dimasukkan tidak melebihi stok yang tersedia
+        if ($request->quantity > $stock->quantity) {
+            return back()->with('error', 'Jumlah melebihi stok yang tersedia.');
+        }
+    
         // Ambil ID user yang sedang login
         $userId = Auth::id();
     
@@ -31,25 +37,42 @@ class CartController extends Controller
             return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
         }
     
-        // Cek apakah item sudah ada di keranjang dengan stock_id yang sama
-        $cartItem = Cart::where('user_id', $userId)
-            ->where('product_id', $productId)
-            ->where('stock_id', $stock->id)
-            ->first();
+        DB::beginTransaction();
+        try {
+            // Cek apakah item sudah ada di keranjang dengan stock_id yang sama
+            $cartItem = Cart::where('user_id', $userId)
+                ->where('product_id', $productId)
+                ->where('stock_id', $stock->id)
+                ->first();
     
-        if ($cartItem) {
-            $cartItem->increment('quantity'); // Tambah jumlah jika sudah ada
-        } else {
-            Cart::create([
-                'user_id' => $userId,
-                'product_id' => $productId,
-                'stock_id' => $stock->id, // Simpan stock_id
-                'quantity' => 1,
-            ]);
+            if ($cartItem) {
+                // Update jumlah, tetapi tidak boleh melebihi stok yang tersedia
+                $newQuantity = $cartItem->quantity + $request->quantity;
+                if ($newQuantity > $stock->quantity) {
+                    return back()->with('error', 'Total jumlah dalam keranjang melebihi stok yang tersedia.');
+                }
+                $cartItem->increment('quantity', $request->quantity);
+            } else {
+                Cart::create([
+                    'user_id' => $userId,
+                    'product_id' => $productId,
+                    'stock_id' => $stock->id,
+                    'quantity' => $request->quantity,
+                ]);
+            }
+    
+            // Kurangi stok setelah produk berhasil ditambahkan ke keranjang
+            $stock->decrement('quantity', $request->quantity);
+    
+            DB::commit();
+            return back()->with('success', 'Produk berhasil ditambahkan ke keranjang!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Terjadi kesalahan, silakan coba lagi.');
         }
-    
-        return back()->with('success', 'Produk berhasil ditambahkan ke keranjang!');
     }
+    
+    
     
 
     public function viewCart()
@@ -63,9 +86,17 @@ class CartController extends Controller
     
         // Ambil data keranjang berdasarkan user_id
         $cart = Cart::where('user_id', $userId)->with('product', 'stock')->get();
-        
-        return view('cart.index', compact('cart'));
+    
+        // Hitung subtotal setiap item dan total harga keseluruhan
+        $cart->each(function ($item) {
+            $item->subtotal = $item->quantity * ($item->product->price ?? 0);
+        });
+    
+        $totalHarga = $cart->sum('subtotal'); // Hitung total harga
+    
+        return view('cart.index', compact('cart', 'totalHarga'));
     }
+    
     
     
     
