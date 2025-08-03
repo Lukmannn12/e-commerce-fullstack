@@ -27,14 +27,14 @@ class StockResource extends Resource
                     ->relationship('product', 'name')
                     ->required(),
                     Forms\Components\Select::make('size')
+                     ->label('Ukuran') 
                     ->options([
                         'S' => 'Small (S)',
                         'M' => 'Medium (M)',
                         'L' => 'Large (L)',
                         'XL' => 'Extra Large (XL)',
                     ])
-                    ->required()
-                    ->native(false), 
+                    ->required(),
                 Forms\Components\TextInput::make('quantity')
                     ->required()
                     ->numeric()
